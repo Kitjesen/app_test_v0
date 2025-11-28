@@ -9,204 +9,232 @@ class ModelScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<RobotProvider>(
       builder: (context, robotProvider, _) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 3D模型预览区域
-              Container(
-                height: 400,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.blue.withOpacity(0.1),
-                      Colors.purple.withOpacity(0.1),
-                    ],
+        return Scaffold(
+          backgroundColor: const Color(0xFF0A0E14),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'Robot Model',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
                 ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+
+                // 3D Model Placeholder
+                Container(
+                  height: 400,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF1A2A1A),
+                        const Color(0xFF1F3A1F),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: const Color(0xFF7FFF7F).withOpacity(0.1),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Icon(
-                        Icons.view_in_ar_outlined,
-                        size: 80,
-                        color: Colors.grey[400],
+                      // Grid lines for 3D effect
+                      CustomPaint(
+                        size: const Size(double.infinity, 400),
+                        painter: GridPainter(),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '3D机器狗模型',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.view_in_ar,
+                            size: 80,
+                            color: const Color(0xFF7FFF7F).withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            '3D Visualization',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Interactive Model Coming Soon',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: const Color(0xFF8A92A6),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '拖动旋转 · 双指缩放',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                      // Joint indicators (Fake)
+                      Positioned(
+                        left: 40,
+                        top: 100,
+                        child: _buildJointIndicator('FL-Leg', '45°'),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // 机器狗信息
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '机器狗状态',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Positioned(
+                        right: 40,
+                        top: 100,
+                        child: _buildJointIndicator('FR-Leg', '45°'),
                       ),
-                      const SizedBox(height: 16),
-                      _buildInfoRow(
-                        icon: Icons.battery_charging_full,
-                        label: '电量',
-                        value: '${robotProvider.robotState.battery}%',
-                        color: Colors.green,
+                      Positioned(
+                        left: 40,
+                        bottom: 100,
+                        child: _buildJointIndicator('BL-Leg', '30°'),
                       ),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        icon: Icons.thermostat,
-                        label: '温度',
-                        value: '${robotProvider.robotState.temperature}°C',
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        icon: Icons.signal_cellular_alt,
-                        label: '信号强度',
-                        value: '${robotProvider.robotState.signalStrength}%',
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        icon: Icons.info_outline,
-                        label: '状态',
-                        value: robotProvider.robotState.statusText,
-                        color: Colors.purple,
+                      Positioned(
+                        right: 40,
+                        bottom: 100,
+                        child: _buildJointIndicator('BR-Leg', '30°'),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              
-              // 关节角度信息
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '关节角度',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                const SizedBox(height: 24),
+
+                // Joint Status Cards
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatusCard(
+                        'Joint Temp',
+                        '38°C',
+                        Icons.thermostat,
+                        const Color(0xFF7FFF7F),
                       ),
-                      const SizedBox(height: 16),
-                      _buildJointSlider('前左腿', 45),
-                      _buildJointSlider('前右腿', 50),
-                      _buildJointSlider('后左腿', 40),
-                      _buildJointSlider('后右腿', 48),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatusCard(
+                        'Torque',
+                        '2.4Nm',
+                        Icons.speed,
+                        const Color(0xFF64B5F6),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 20, color: color),
+  Widget _buildJointIndicator(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF7FFF7F).withOpacity(0.3),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildJointSlider(String label, double value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 14)),
-              Text('${value.toInt()}°', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            ],
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF8A92A6),
+              fontSize: 10,
+            ),
           ),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: value / 180,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF7FFF7F),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildStatusCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1419),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.05),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF8A92A6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF7FFF7F).withOpacity(0.1)
+      ..strokeWidth = 1;
+
+    const step = 40.0;
+    for (double x = 0; x <= size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y <= size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

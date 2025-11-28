@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/robot_provider.dart';
+import '../services/local_storage.dart';
 
 class ConnectionScreen extends StatefulWidget {
   const ConnectionScreen({super.key});
@@ -531,8 +532,13 @@ class _ConnectionScreenState extends State<ConnectionScreen> with SingleTickerPr
     );
   }
 
-  void _showManualConnectionDialog() {
-    final ipController = TextEditingController();
+  void _showManualConnectionDialog() async {
+    final settings = await LocalStorage.getConnectionSettings();
+    final ipController = TextEditingController(text: settings['ip'] ?? '192.168.1.100');
+    final portController = TextEditingController(text: settings['port'] ?? '8080');
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -547,6 +553,19 @@ class _ConnectionScreenState extends State<ConnectionScreen> with SingleTickerPr
                 labelText: 'IP地址',
                 hintText: '例如: 192.168.1.100',
                 prefixIcon: const Icon(Icons.computer),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: portController,
+              decoration: InputDecoration(
+                labelText: '端口',
+                hintText: '例如: 8080',
+                prefixIcon: const Icon(Icons.dns),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -583,10 +602,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> with SingleTickerPr
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: 实现手动连接逻辑
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('正在连接到指定IP...')),
-              );
+              _connectManual(ipController.text, portController.text);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3498DB),
@@ -597,6 +613,28 @@ class _ConnectionScreenState extends State<ConnectionScreen> with SingleTickerPr
         ],
       ),
     );
+  }
+
+  void _connectManual(String ip, String port) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('正在连接到 $ip:$port...')),
+    );
+
+    // 保存设置
+    await LocalStorage.saveConnectionSettings(ip, port);
+
+    // 发起连接
+    final provider = Provider.of<RobotProvider>(context, listen: false);
+    await provider.connect(ip, port);
+    
+    // 连接成功/失败的状态会在 RobotProvider 中通过 WebSocketService 自动更新
+    // 这里可以添加一个监听或者简单的延迟来反馈
+    // 由于 WebSocket 连接是异步的，这里简单延迟检查
+    
+    if (!mounted) return;
+    
+    // 简单返回，状态由首页的状态条显示
+    Navigator.pop(context);
   }
 
   Widget _buildDeviceCard(DeviceInfo device, RobotProvider provider, String type) {

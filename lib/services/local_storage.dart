@@ -10,6 +10,25 @@ class LocalStorage {
   static const String _keyMaxSpeed = 'max_speed';
   static const String _keyFirstLaunch = 'first_launch';
 
+  static const String _keyLastIp = 'last_ip';
+  static const String _keyLastPort = 'last_port';
+
+  // 保存连接设置
+  static Future<void> saveConnectionSettings(String ip, String port) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyLastIp, ip);
+    await prefs.setString(_keyLastPort, port);
+  }
+
+  // 获取连接设置
+  static Future<Map<String, String?>> getConnectionSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'ip': prefs.getString(_keyLastIp),
+      'port': prefs.getString(_keyLastPort),
+    };
+  }
+
   // 保存上次连接的设备
   static Future<void> saveLastDevice(String deviceName) async {
     final prefs = await SharedPreferences.getInstance();

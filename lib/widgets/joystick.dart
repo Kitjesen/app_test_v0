@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
 class Joystick extends StatefulWidget {
@@ -20,6 +21,7 @@ class Joystick extends StatefulWidget {
 class _JoystickState extends State<Joystick> {
   Offset _position = Offset.zero;
   final double _maxDistance = 60;
+  DateTime _lastHapticTime = DateTime.now();
 
   void _updatePosition(Offset localPosition, Size size) {
     if (!widget.enabled) return;
@@ -34,6 +36,12 @@ class _JoystickState extends State<Joystick> {
       _position = delta * (_maxDistance / distance);
     }
 
+    // 触发震动反馈 (限制频率)
+    if (DateTime.now().difference(_lastHapticTime).inMilliseconds > 50) {
+      HapticFeedback.selectionClick();
+      _lastHapticTime = DateTime.now();
+    }
+
     // 归一化坐标 (-1 到 1)
     final x = _position.dx / _maxDistance;
     final y = -_position.dy / _maxDistance; // Y轴反转
@@ -43,6 +51,7 @@ class _JoystickState extends State<Joystick> {
   }
 
   void _resetPosition() {
+    HapticFeedback.mediumImpact();
     setState(() {
       _position = Offset.zero;
     });
@@ -51,21 +60,29 @@ class _JoystickState extends State<Joystick> {
 
   @override
   Widget build(BuildContext context) {
+    // 深色主题配色
+    final baseColor = const Color(0xFF7FFF7F);
+    final bgColor = const Color(0xFF1A2A1A);
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          widget.label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: widget.enabled ? Colors.grey[700] : Colors.grey[400],
+        if (widget.label.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: widget.enabled ? baseColor : Colors.grey[600],
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
         GestureDetector(
           onPanStart: (details) {
             if (widget.enabled) {
+              HapticFeedback.mediumImpact();
               final box = context.findRenderObject() as RenderBox;
               _updatePosition(details.localPosition, box.size);
             }
@@ -78,26 +95,11 @@ class _JoystickState extends State<Joystick> {
           },
           onPanEnd: (_) => _resetPosition(),
           child: Container(
-            width: 200,
-            height: 200,
+            width: 150, // 调整尺寸以适应新布局
+            height: 150,
             decoration: BoxDecoration(
-              color: widget.enabled
-                  ? Colors.white
-                  : Colors.grey[200],
+              color: Colors.transparent, // 背景透明，由外部容器提供
               shape: BoxShape.circle,
-              border: Border.all(
-                color: widget.enabled
-                    ? Colors.blue.withOpacity(0.3)
-                    : Colors.grey.withOpacity(0.2),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -108,53 +110,57 @@ class _JoystickState extends State<Joystick> {
                   height: 8,
                   decoration: BoxDecoration(
                     color: widget.enabled
-                        ? Colors.blue.withOpacity(0.3)
+                        ? baseColor.withOpacity(0.3)
                         : Colors.grey.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
                 ),
                 // 方向线
                 CustomPaint(
-                  size: const Size(200, 200),
+                  size: const Size(150, 150),
                   painter: _DirectionPainter(
                     position: _position,
                     enabled: widget.enabled,
+                    color: baseColor,
                   ),
                 ),
                 // 摇杆
                 Transform.translate(
                   offset: _position,
                   child: Container(
-                    width: 70,
-                    height: 70,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                      gradient: RadialGradient(
                         colors: widget.enabled
                             ? [
-                                const Color(0xFF3B82F6),
-                                const Color(0xFF2563EB),
+                                baseColor.withOpacity(0.9),
+                                const Color(0xFF2D4A2B),
                               ]
                             : [
-                                Colors.grey[400]!,
-                                Colors.grey[500]!,
+                                Colors.grey[600]!,
+                                Colors.grey[800]!,
                               ],
                       ),
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: widget.enabled
+                            ? Colors.white.withOpacity(0.2)
+                            : Colors.transparent,
+                        width: 1,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: (widget.enabled ? Colors.blue : Colors.grey)
-                              .withOpacity(0.3),
+                          color: Colors.black.withOpacity(0.3),
                           blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: Icon(
-                      Icons.control_camera,
-                      color: Colors.white,
-                      size: 32,
+                      Icons.gamepad,
+                      color: widget.enabled ? const Color(0xFF0A0E14) : Colors.white30,
+                      size: 24,
                     ),
                   ),
                 ),
@@ -170,8 +176,13 @@ class _JoystickState extends State<Joystick> {
 class _DirectionPainter extends CustomPainter {
   final Offset position;
   final bool enabled;
+  final Color color;
 
-  _DirectionPainter({required this.position, required this.enabled});
+  _DirectionPainter({
+    required this.position,
+    required this.enabled,
+    required this.color,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -179,7 +190,7 @@ class _DirectionPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = enabled
-          ? Colors.blue.withOpacity(0.3)
+          ? color.withOpacity(0.3)
           : Colors.grey.withOpacity(0.2)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
